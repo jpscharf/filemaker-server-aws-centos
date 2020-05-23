@@ -1,0 +1,17 @@
+#  This file is part of systemd.
+
+[Unit]
+Description=FileMaker Data (/opt/FileMaker/FileMaker Server)
+DefaultDependencies=no
+Conflicts=umount.target
+Before=local-fs.target umount.target
+After=swap.target
+
+[Mount]
+What=/dev/nvme1n1p1
+Where='/opt/FileMaker/FileMaker Server'
+Type=xfs
+Options=defaults
+
+[Install]
+WantedBy=multi-user.target

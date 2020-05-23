@@ -1,0 +1,78 @@
+{
+  "variables": {
+    "aws_access_key": "{{env `AWS_ACCESS_KEY_ID`}}",
+    "aws_secret_key": "{{env `AWS_SECRET_ACCESS_KEY`}}",
+    "region": "us-east-2",
+    "aws_instance_type": "t3.small",
+    "filemaker_server_version": "19.0.1-22.x86_64",
+    "filemaker_server_download": "https://fmdl.filemaker.com/esd/filemaker_server-19.0.1-22.x86_64.rpm",
+    "filemaker_server_folder": "/opt/FileMaker/FileMaker Server",
+    "filemaker_data_volume_size": 20,
+    "systemd_mount_unit": "opt-FileMaker-FileMaker_Server.mount"
+  },
+  "builders": [
+    {
+      "access_key": "{{user `aws_access_key`}}",
+      "ami_name": "filemaker-server-centos7-{{user `aws_instance_type`}}-{{user `filemaker_server_version`}}-{{timestamp}}",
+      "instance_type": "{{user `aws_instance_type`}}",
+      "region": "{{user `region`}}",
+      "secret_key": "{{user `aws_secret_key`}}",
+      "source_ami_filter": {
+        "filters": {
+          "virtualization-type": "hvm",
+          "name": "*CentOS Linux 7 x86_64 HVM*",
+          "root-device-type": "ebs"
+        },
+        "owners": ["679593333241"],
+        "most_recent": true
+      },
+      "type": "amazon-ebs",
+      "launch_block_device_mappings": [
+        {
+          "device_name": "/dev/sda1",
+          "volume_size": 8,
+          "volume_type": "gp2",
+          "delete_on_termination": true
+        },
+        {
+          "device_name": "/dev/sdb",
+          "volume_type": "gp2",
+          "volume_size": "{{user `filemaker_data_volume_size`}}",
+          "delete_on_termination": true
+        }
+      ],
+      "communicator": "ssh",
+      "ssh_username": "centos"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "file",
+      "source": "resources/{{ user `systemd_mount_unit`}}",
+      "destination": "/tmp/{{ user `systemd_mount_unit`}}"
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "echo \"Partitioning Second Volume\"",
+        "printf \"o\nn\np\n1\n\n\nw\n\" | sudo fdisk /dev/nvme1n1",
+        "echo \"Formatting Second Volume (xfs)\"",
+        "sudo mkfs.xfs /dev/nvme1n1p1",
+        "echo \"Creating FileMaker Server folder\"",
+        "echo \"  -> {{user `filemaker_server_folder`}}\"",
+        "sudo mkdir -p {{user `filemaker_server_folder`}}",
+        "echo \"Creating systemd mount\"",
+        "echo \"  -> /usr/lib/systemd/system/{{ user `systemd_mount_unit`}}\"",
+        "sudo cp /tmp/{{ user `systemd_mount_unit`}} /usr/lib/systemd/system/",
+        "sleep 5",
+        "sudo systemctl daemon-reload",
+        "echo \"Mounting FileMaker Server folder\"",
+        "echo \"  -> mounting '/dev/nvme1n1p1' as {{user `filemaker_server_folder`}}\"",
+        "sudo systemctl start {{ user `systemd_mount_unit`}}",
+        "echo \"Installing FileMaker Server {{user `filemaker_server_version`}}\"",
+        "echo \"  - url: {{user `filemaker_server_download`}}\"",
+        "sudo yum install -y {{user `filemaker_server_download`}}"
+      ]
+    }
+  ]
+}
