@@ -7,16 +7,16 @@
     "filemaker_server_version": "19.0.1-22.x86_64",
     "filemaker_server_download": "https://fmdl.filemaker.com/esd/filemaker_server-19.0.1-22.x86_64.rpm",
     "filemaker_server_folder": "/opt/FileMaker/FileMaker Server",
-    "filemaker_data_volume_size": 20,
+    "filemaker_data_volume_size": "20",
     "systemd_mount_unit": "opt-FileMaker-FileMaker_Server.mount"
   },
   "builders": [
     {
       "access_key": "{{user `aws_access_key`}}",
+      "secret_key": "{{user `aws_secret_key`}}",
       "ami_name": "filemaker-server-centos7-{{user `aws_instance_type`}}-{{user `filemaker_server_version`}}-{{timestamp}}",
       "instance_type": "{{user `aws_instance_type`}}",
       "region": "{{user `region`}}",
-      "secret_key": "{{user `aws_secret_key`}}",
       "source_ami_filter": {
         "filters": {
           "virtualization-type": "hvm",
