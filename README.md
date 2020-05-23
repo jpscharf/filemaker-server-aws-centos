@@ -1,8 +1,12 @@
 # FileMaker CentOS AMI #
 
+**ALPHA QUALITY: DO NOT USE IN PRODUCTION**
+
 # Requirements #
 - [packer](https://packer.io)
 - AWS KEYS
+- A security group id
+    - I would create one for FileMaker Servers and use that, e.g. 80, 443, 5003, 16000 avaliable from everywhere.
 
 # Defaults #
 - OS: `CentOS 7`
